@@ -16,3 +16,5 @@ The ids classification alghoritm does not require anything else. It produces sev
 A complete implementation should also collect the packets from the network and pass them to the classification algorithm, but this is ouside the scope of our research.
 
 To execute the code, please clone the repository and run from your preferred IDE or download the repository and run the code with "python ids_classification_algorithm.py" after entering the correct directory.
+
+Please keep in mind that running the file from the terminal usually takes double the time than running the file from an IDE.
