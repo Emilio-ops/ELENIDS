@@ -212,7 +212,7 @@ if __name__ == "__main__":
         TN = TN.astype(float)
         FPR = FP/(FP+TN)
         print('FPR: '+str(FPR))
-        FAR.append(str('%.3f' % FPR[0]))
+        FAR.append(str('%.8f' % FPR[6]))
 
     fig, axs = plt.subplots(6)
     fig.suptitle('Comparison of Classifiers')
