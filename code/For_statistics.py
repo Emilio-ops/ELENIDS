@@ -148,76 +148,76 @@ if __name__ == "__main__":
     
 
     #FROM THIS POINT IS FOR THE WHOLE DATASET
+
+    start_time = time.time()
+    testing_prediction = []
+    testing_time = []
+    for i  in range(0,4):
+        s = time.time()
+        testing_prediction.append(v[i].predict(X_test))
+        testing_time.append(time.time() - s)
+    s = time.time()
+    testing_prediction.append(model1.predict(X_test))
+    testing_time.append(time.time() - s)
+    s = time.time()
+    testing_prediction.append(model.predict(X_test))
+    testing_time.append(time.time() - s)
+    #print(f"Il df {n} è stato classificato in {time.time() - start_time}")
+    accuracy = []
+    accuracy.append(accuracy_score(Y_test, testing_prediction[0])*100)
+    accuracy.append(accuracy_score(Y_test, testing_prediction[1])*100)
+    accuracy.append(accuracy_score(Y_test, testing_prediction[2])*100)
+    accuracy.append(accuracy_score(Y_test, testing_prediction[3])*100)
+    accuracy.append(accuracy_score(Y_test, testing_prediction[4])*100)
+    accuracy.append(accuracy_score(Y_test, testing_prediction[5])*100)
+
+
+    report = []
+    report.append(classification_report(Y_test, testing_prediction[0], output_dict=True))
+    report.append(classification_report(Y_test, testing_prediction[1], output_dict=True))
+    report.append(classification_report(Y_test, testing_prediction[2], output_dict=True))
+    report.append(classification_report(Y_test, testing_prediction[3], output_dict=True))
+    report.append(classification_report(Y_test, testing_prediction[4], output_dict=True))
+    report.append(classification_report(Y_test, testing_prediction[5], output_dict=True))
+
+    precision = []
+    recall = []
+    f1 = []
+    for i in range(0,6):
+        precision.append(report[i]['weighted avg']['precision'])
+        recall.append(report[i]['weighted avg']['recall'])
+        f1.append(report[i]['weighted avg']['f1-score'])
+    print(f"\tIl df {n} è stato eseguito con una precisione del {accuracy}% in {time.time() - start_time}")
     
-    #start_time = time.time()
-    #testing_prediction = []
-    #testing_time = []
-    #for i  in range(0,4):
-    #    s = time.time()
-    #    testing_prediction.append(v[i].predict(X_test))
-    #    testing_time.append(time.time() - s)
-    #s = time.time()
-    #testing_prediction.append(model1.predict(X_test))
-    #testing_time.append(time.time() - s)
-    #s = time.time()
-    #testing_prediction.append(model.predict(X_test))
-    #testing_time.append(time.time() - s)
-    ##print(f"Il df {n} è stato classificato in {time.time() - start_time}")
-    #accuracy = []
-    #accuracy.append(accuracy_score(Y_test, testing_prediction[0])*100)
-    #accuracy.append(accuracy_score(Y_test, testing_prediction[1])*100)
-    #accuracy.append(accuracy_score(Y_test, testing_prediction[2])*100)
-    #accuracy.append(accuracy_score(Y_test, testing_prediction[3])*100)
-    #accuracy.append(accuracy_score(Y_test, testing_prediction[4])*100)
-    #accuracy.append(accuracy_score(Y_test, testing_prediction[5])*100)
-#
-#
-    #report = []
-    #report.append(classification_report(Y_test, testing_prediction[0], output_dict=True))
-    #report.append(classification_report(Y_test, testing_prediction[1], output_dict=True))
-    #report.append(classification_report(Y_test, testing_prediction[2], output_dict=True))
-    #report.append(classification_report(Y_test, testing_prediction[3], output_dict=True))
-    #report.append(classification_report(Y_test, testing_prediction[4], output_dict=True))
-    #report.append(classification_report(Y_test, testing_prediction[5], output_dict=True))
-#
-    #precision = []
-    #recall = []
-    #f1 = []
-    #for i in range(0,6):
-    #    precision.append(report[i]['weighted avg']['precision'])
-    #    recall.append(report[i]['weighted avg']['recall'])
-    #    f1.append(report[i]['weighted avg']['f1-score'])
-    #print(f"\tIl df {n} è stato eseguito con una precisione del {accuracy}% in {time.time() - start_time}")
-    #
     #precision = precision + accuracy
     #n = n+1
     #print(accuracy)
     #print("Classification report: ", classification_report(Y_test, testing_prediction))
-    #matrix = []
-    #matrix.append(confusion_matrix(Y_test, testing_prediction[0]))
-    #matrix.append(confusion_matrix(Y_test, testing_prediction[1]))
-    #matrix.append(confusion_matrix(Y_test, testing_prediction[2]))
-    #matrix.append(confusion_matrix(Y_test, testing_prediction[3]))
-    #matrix.append(confusion_matrix(Y_test, testing_prediction[4]))
-    #matrix.append(confusion_matrix(Y_test, testing_prediction[5]))
-#
-    #FAR = []
-    #for i in range(0,6):
-    #    FP = matrix[i].sum(axis=0) - np.diag(matrix[i])
-    #    FN = matrix[i].sum(axis=1) - np.diag(matrix[i])
-    #    TP = np.diag(matrix[i])
-    #    FN = FN.astype(float)
-    #    TN = matrix[i].sum() - (FP + FN + TP)
-    #    FP = FP.astype(float)
-    #    TN = TN.astype(float)
-    #    FPR = FP/(FP+TN)
-    #    print('FPR: '+str(FPR))
-    #    FAR.append(str('%.3f' % FPR[0]))
-#
-    #fig, axs = plt.subplots(6)
-    #fig.suptitle('Comparison of Classifiers')
-#
-    #x = ['DT', 'RF', 'MLP', 'KNN', '4-EN']
+    matrix = []
+    matrix.append(confusion_matrix(Y_test, testing_prediction[0]))
+    matrix.append(confusion_matrix(Y_test, testing_prediction[1]))
+    matrix.append(confusion_matrix(Y_test, testing_prediction[2]))
+    matrix.append(confusion_matrix(Y_test, testing_prediction[3]))
+    matrix.append(confusion_matrix(Y_test, testing_prediction[4]))
+    matrix.append(confusion_matrix(Y_test, testing_prediction[5]))
+
+    FAR = []
+    for i in range(0,6):
+        FP = matrix[i].sum(axis=0) - np.diag(matrix[i])
+        FN = matrix[i].sum(axis=1) - np.diag(matrix[i])
+        TP = np.diag(matrix[i])
+        FN = FN.astype(float)
+        TN = matrix[i].sum() - (FP + FN + TP)
+        FP = FP.astype(float)
+        TN = TN.astype(float)
+        FPR = FP/(FP+TN)
+        print('FPR: '+str(FPR))
+        FAR.append(str('%.3f' % FPR[0]))
+
+    fig, axs = plt.subplots(6)
+    fig.suptitle('Comparison of Classifiers')
+
+    x = ['DT', 'RF', 'MLP', 'KNN', '4-EN']
     #for j in range(0,4):
     #    axs[0].plot(x, accuracy)
     #    axs[1].plot(x, precision)
@@ -234,28 +234,28 @@ if __name__ == "__main__":
     #axs[5].set(xlabel='Classifiers', ylabel='Testing time \n(s)')
     #for ax in axs.flat:
     #    ax.label_outer()
-#
-    #print("ACCURACY\n")
-    #for i in range(0,6):
-    #    print(accuracy[i])
-    #print("PRECISION\n")
-    #for i in range(0,6):
-    #    print(precision[i])
-    #print("RECALL\n")
-    #for i in range(0,6):
-    #    print(recall[i])
-    #print("F1\n")
-    #for i in range(0,6):
-    #    print(f1[i])
-    #print("FAR\n")
-    #for i in range(0,6):
-    #    print(FAR[i])
-    #print("FITTING TIME\n")
-    #for i in range(0,6):
-    #    print(fitting_time[i])
-    #print("TESTING TIME\n")
-    #for i in range(0,6):
-    #    print(testing_time[i])
+
+    print("ACCURACY\n")
+    for i in range(0,6):
+        print(accuracy[i])
+    print("PRECISION\n")
+    for i in range(0,6):
+        print(precision[i])
+    print("RECALL\n")
+    for i in range(0,6):
+        print(recall[i])
+    print("F1\n")
+    for i in range(0,6):
+        print(f1[i])
+    print("FAR\n")
+    for i in range(0,6):
+        print(FAR[i])
+    print("FITTING TIME\n")
+    for i in range(0,6):
+        print(fitting_time[i])
+    print("TESTING TIME\n")
+    for i in range(0,6):
+        print(testing_time[i])
 
     #Confusions = []
     #Confusions.append(ConfusionMatrixDisplay(matrix[0], display_labels={0,1}))
