@@ -18,3 +18,11 @@ A complete implementation should also collect the packets from the network and p
 To execute the code, please clone the repository and run from your preferred IDE or download the repository and run the code with "python ids_classification_algorithm.py" after entering the correct directory.
 
 Please keep in mind that running the file from the terminal usually takes double the time than running the file from an IDE.
+
+## Python package
+
+To download the system please use the following command on your terminal:
+pip install -i https://test.pypi.org/simple/ elenids==0.0.2
+
+Please keep in mind that the current version is not ready and we're still learning how to deploy a python system, so it may take us some time. Please upgrade it whenever it is necessary.
+The current distribution can be found here: https://test.pypi.org/project/elenids/0.0.2/
