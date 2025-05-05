@@ -1,5 +1,7 @@
 # Data-mining-for-cyber-security
 This is the official directory for the Data mining for cyber security project.
+The proposed system, Elenids, is an easy to use Passive NIDS. It provide a function to train the model and one to classify the wanted instances (passed as a npyarray that should satisfy the same requisites of the UNSW-NB15 dataset). The result is provided as an excel file called Report {timestamp}.
+For any question, please open an issue or write to our mails.
 
 To use the ids classification alghoritm you should before dawnload the following libraries:
 1. Panda;
@@ -22,3 +24,4 @@ Please keep in mind that running the file from the terminal usually takes double
 ## Python package
 pip install -i https://test.pypi.org/simple/ elenids to download the current distribution.
 The package contains an example() function that simulate the whole process.
+The adjourned package can be found here: https://test.pypi.org/project/elenids/ .
