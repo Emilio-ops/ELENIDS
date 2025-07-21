@@ -1,0 +1,183 @@
+from sklearn.preprocessing import LabelEncoder
+import numpy as np
+import pandas as pd
+import time
+from sklearn.ensemble import RandomForestClassifier, VotingClassifier
+from sklearn.tree import DecisionTreeClassifier, plot_tree, export_text
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import accuracy_score, confusion_matrix, ConfusionMatrixDisplay, classification_report, precision_score, precision_recall_fscore_support
+from sklearn.model_selection import train_test_split
+from sklearn.neural_network import MLPClassifier
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import maxabs_scale, StandardScaler, MinMaxScaler
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.pipeline import Pipeline
+from importlib.resources import files
+
+
+
+def load_testing():
+    """
+    This function returns the Dataframe of the UNSW_NB_15_testing-set
+    """
+    path = files('elenids').joinpath('data','UNSW_NB15_testing-set.csv')
+    return pd.read_csv(path)
+
+def load_training():
+    """
+    This function returns the Dataframe of the UNSW_NB_15_training-set
+    """
+    path = files('elenids').joinpath('data','UNSW_NB15_training-set.csv')
+    return pd.read_csv(path)
+
+def load():
+    """
+    This function returns the Dataframe of the complete dataset
+    """
+    df = load_testing()
+    df_t = load_training()
+    
+    df = pd.concat([df_t, df],ignore_index=True)
+    df.drop(df[df['attack_cat'] == 'Worms'].index, inplace=True)    #Worms drop
+    df = df.drop(columns=['is_ftp_login', 'ct_ftp_cmd', 'dwin', 'trans_depth', 'is_sm_ips_ports', 'response_body_len', 'swin'])
+    return df
+
+def build():
+    """
+    This function returns the ensemble model composed of DT, RF, KNN, and MLP.
+
+    Returns
+    -------
+    model : VotingClassifier
+    """
+    v = [0]*4
+    v[0] = Pipeline([('scaler', MinMaxScaler()), ('DT', DecisionTreeClassifier(max_depth=12, min_samples_split=44))])
+    v[1] = Pipeline([('scaler', MinMaxScaler()), ('RF', RandomForestClassifier(max_depth=12, min_samples_split=44))])
+    v[2] = Pipeline([('scaler', StandardScaler()), ('mlp', MLPClassifier(solver="adam", activation='relu', hidden_layer_sizes=(100,), max_iter=100))])
+    v[3] = Pipeline([('scaler', MinMaxScaler()), ('knn', KNeighborsClassifier(n_neighbors=12, n_jobs=-1))])
+    model = VotingClassifier(estimators=[("DT", v[0]), ("RF", v[1]), ("MLP", v[2]), ("KNN", v[3])], voting= 'soft', n_jobs=4, weights=[3, 3, 1, 2])
+    return model
+
+def Fastbuild():
+    """
+    This function returns the ensemble model composed of DT, RF, and MLP.
+    The weight of the classifiers is derived from their F1-scores: 0.8305 0.8149 0.8414 .
+
+    Returns
+    -------
+    model : VotingClassifier
+    """
+    v = [0]*3
+    v[0] = DecisionTreeClassifier(max_depth=12, min_samples_split=44)
+    v[1] = RandomForestClassifier(max_depth=12, min_samples_split=44)
+    v[2] = Pipeline([('scaler', StandardScaler()), ('mlp', MLPClassifier(solver="adam", activation='relu', hidden_layer_sizes=(100,), max_iter=100))])
+    model = VotingClassifier(estimators=[("DT", v[0]), ("RF", v[1]), ("MLP", v[2])], voting= 'soft', n_jobs=4, weights=[3.05, 1.49, 4.14])
+    return model
+
+def fit(model, X_train, Y_train):
+    """Fit the model according to X_train, Y_train.
+
+        Parameters
+        ----------
+        X_train : array-like of shape (n_samples, n_features)
+            Training vectors, where `n_samples` is the number of samples
+            and `n_features` is the number of features.
+
+        Y_train : array-like of shape (n_samples,)
+            Target values.
+
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
+        """
+    accuracy = 0
+    while accuracy < 85.3:
+        model = model.fit(X_train, Y_train)
+        testing_prediction = model.predict(X_train)
+        accuracy = accuracy_score(Y_train, testing_prediction)*100
+    return model
+
+
+def classify(model, data,col, le,le1,le2,le3):
+    """
+    Perform classification on an array of test vectors data.
+
+    Parameters
+    ----------
+    data : array-like of shape (n_samples, n_features)
+        The input samples.
+
+    col : array-like of shape (n_samples, n_features)
+        The names of the columns of the final report.
+
+    le : fitted label encoder (protocol).
+
+    le1 : fitted label encoder (service).
+    
+    le2 : fitted label encoder (state).
+
+    le3 : fitted label encoder (attack_category).
+
+
+    Returns
+    -------
+    none
+
+    Produces
+    -------
+    Excel file (.xlsx) containing all the classified attacks (if the data array contained at least an attack).
+    """
+    testing_prediction = model.predict(data)
+
+    result = pd.DataFrame(data)
+    result.columns = col
+    pred = pd.DataFrame(testing_prediction)
+    pred.columns = ['attack_cat']
+    result['proto'] = pd.to_numeric(result['proto'], downcast='integer')
+    result['service'] = pd.to_numeric(result['service'], downcast='integer')
+    result['state'] = pd.to_numeric(result['state'], downcast='integer')
+
+    result['proto'] = le.inverse_transform(result['proto'])   
+    result['service'] = le1.inverse_transform(result['service'])
+    result['state'] = le2.inverse_transform(result['state'])   
+    pred['attack_cat'] = le3.inverse_transform(pred['attack_cat'])
+
+    result = pd.concat([result['proto'],result['service'],result['dur'],result['rate']], axis=1)
+    result = pd.concat([result.reset_index(drop=True), pred.reset_index(drop=True)], axis = 1)
+    result.drop(result[result['attack_cat'] == 'Normal'].index, inplace=True)
+    #result['id'] = pd.to_numeric(result['id'], downcast='integer')
+
+    #REPORT PRODUCTION
+    result.to_excel(f"FReport{time.time()}.xlsx")
+
+
+def example():
+    """
+    Simulates an IDS that uses the package functions.
+    """
+    df = load()
+    le = LabelEncoder()
+    le1 = LabelEncoder()
+    le2 = LabelEncoder()
+    le3 = LabelEncoder()
+    df['proto']         = le.fit_transform(df['proto'])
+    df['service']       = le1.fit_transform(df['service'])
+    df['state']         = le2.fit_transform(df['state'])
+    df['attack_cat']    = le3.fit_transform(df['attack_cat'])
+
+    X_train, X_test, Y_train, Y_test = train_test_split(df[df.columns[:-2]], df['attack_cat'], test_size=0.3)
+
+    df['proto'] = le.inverse_transform(df['proto'])    
+    df['service'] = le1.inverse_transform(df['service'])
+    df['state'] = le2.inverse_transform(df['state'])
+    dataframes = [X_test.iloc[:2000],X_test.iloc[2000:4000], X_test.iloc[4000:6000], X_test.iloc[6000:8000], X_test.iloc[8000:10000], X_test.iloc[10000:12000], X_test.iloc[12000:14000], X_test.iloc[14000:16000],X_test.iloc[16000:18000], X_test.iloc[18000:22000], X_test.iloc[22000:24000], X_test.iloc[24000:26000], X_test.iloc[26000:28000], X_test.iloc[28000:30000] ]
+    #tests = [Y_test.iloc[:2000],Y_test.iloc[2000:4000], Y_test.iloc[4000:6000], Y_test.iloc[6000:8000], Y_test.iloc[8000:10000], Y_test.iloc[10000:12000], Y_test.iloc[12000:14000], Y_test.iloc[14000:16000],Y_test.iloc[16000:18000], Y_test.iloc[18000:22000], Y_test.iloc[22000:24000], Y_test.iloc[24000:26000], Y_test.iloc[26000:28000], Y_test.iloc[28000:30000] ]    
+
+
+    ids = build()
+    ids = fit(ids, X_train, Y_train)
+    col = df.columns[ : -2]
+
+    for dataframe in dataframes:
+        classify(ids, dataframe, col, le, le1, le2, le3)
