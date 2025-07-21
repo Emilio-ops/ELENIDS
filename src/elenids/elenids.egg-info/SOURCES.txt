@@ -1,0 +1,8 @@
+LICENSE
+MANIFEST.in
+README.md
+pyproject.toml
+src/elenids/elenids.egg-info/PKG-INFO
+src/elenids/elenids.egg-info/SOURCES.txt
+src/elenids/elenids.egg-info/dependency_links.txt
+src/elenids/elenids.egg-info/top_level.txt

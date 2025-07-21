@@ -1,0 +1,13 @@
+LICENSE
+MANIFEST.in
+README.md
+pyproject.toml
+src/elenids/__init__.py
+src/elenids/example.py
+src/elenids/example_Piles.py
+src/elenids.egg-info/PKG-INFO
+src/elenids.egg-info/SOURCES.txt
+src/elenids.egg-info/dependency_links.txt
+src/elenids.egg-info/top_level.txt
+src/elenids/data/UNSW_NB15_testing-set.csv
+src/elenids/data/UNSW_NB15_training-set.csv

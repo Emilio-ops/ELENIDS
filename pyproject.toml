@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "elenids"
+version = "0.1.2"
+authors = [
+  { name="Emilio Fattibene", email="emilio.fattibene@mail.polimi.it" },
+  { name="Virgilio Cusano", email="virgilio.cusano@mail.polimi.it" },
+]
+description = "an ensemble-based anomaly-based passive IDS"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+
+[project.urls]
+Homepage = "https://github.com/Emilio-ops/Data-mining-for-cyber-security"
+Issues = "https://github.com/Emilio-ops/Data-mining-for-cyber-security/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"elenids" = ["data/*.csv"]
