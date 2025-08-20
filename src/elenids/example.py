@@ -13,7 +13,7 @@ from sklearn.preprocessing import maxabs_scale, StandardScaler, MinMaxScaler
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.pipeline import Pipeline
 from importlib.resources import files
-
+import shap
 
 
 def load_testing():
@@ -68,8 +68,10 @@ def Fastbuild():
     model : VotingClassifier
     """
     v = [0]*3
-    v[0] = DecisionTreeClassifier(max_depth=12, min_samples_split=44)
-    v[1] = RandomForestClassifier(max_depth=12, min_samples_split=44)
+    v[0] = Pipeline([('scaler', MinMaxScaler()), ('DT', DecisionTreeClassifier(max_depth=12, min_samples_split=44))])
+    v[1] = Pipeline([('scaler', MinMaxScaler()), ('RF', RandomForestClassifier(max_depth=12, min_samples_split=44))])
+    #v[0] = DecisionTreeClassifier(max_depth=12, min_samples_split=44)
+    #v[1] = RandomForestClassifier(max_depth=12, min_samples_split=44)
     v[2] = Pipeline([('scaler', StandardScaler()), ('mlp', MLPClassifier(solver="adam", activation='relu', hidden_layer_sizes=(100,), max_iter=100))])
     model = VotingClassifier(estimators=[("DT", v[0]), ("RF", v[1]), ("MLP", v[2])], voting= 'soft', n_jobs=4, weights=[3.05, 1.49, 4.14])
     return model
@@ -152,6 +154,177 @@ def classify(model, data,col, le,le1,le2,le3):
     result.to_excel(f"FReport{time.time()}.xlsx")
 
 
+def info(model, 
+         data, 
+         columns, 
+         classifier_name = None):
+    """
+    Provide additional information about the decision making behind the classification of the data.
+
+    Parameters
+    ----------
+     model : ELENIDS or Fast-ELENIDS.
+
+    data : array-like of shape (n_samples, n_features)
+        The input samples.
+
+    columns : list of the names of the features
+        In the original dataset.
+    
+    classifier_name : Name of the classifier that you'd like to
+        Know more about. If None, informations about all the classifiers 
+        Will be provided.
+
+    Returns
+    -------
+    SHAP evaluations of the model.
+    """
+    shap.initjs()
+
+
+    if classifier_name == None:
+        for idx, estimator in enumerate(model.estimators_):
+            print(f"\n=== SHAP for estimator {idx}: {type(estimator).__name__} ===")
+            try:
+                explainer = shap.Explainer(estimator.predict, data)
+                shap_values = explainer.shap_values(data)
+            except Exception as e:
+                try:
+                        explainer = shap.TreeExplainer(estimator)
+                        shap_values = explainer.shap_values(data)
+                except Exception as e:
+                    try:
+                        explainer = shap.KernelExplainer(estimator.predict, data)
+                        shap_values = explainer.shap_values(data)
+                    except Exception as e:
+                        print(f"SKIPPING estimator {idx} ({type(estimator).__name__}): {e}")
+                        continue
+
+            if isinstance(shap_values, list):
+                for i, class_shap_values in enumerate(shap_values):
+                    print(f"Class {i} summary plot:")
+                    shap.summary_plot(class_shap_values, data, max_display=10, show=False)
+                    plt.title(f"Estimator {idx} - Class {i} SHAP Summary")
+                    plt.show()
+                    shap.summary_plot(class_shap_values, data, plot_type="bar", feature_names=columns, show=False)
+                    plt.title(f"Estimator {idx} - Class {i} SHAP Bar")
+                    plt.show()
+            else:
+                shap.summary_plot(shap_values, data, max_display=10, show=False)
+                plt.title(f"Estimator {idx} - SHAP Summary")
+                plt.show()
+                shap.summary_plot(shap_values, data, plot_type="bar", feature_names=columns, show=False)
+                plt.title(f"Estimator {idx} - SHAP Bar")
+                plt.show()
+    else:
+        if classifier_name == 'DT':
+            explainer = shap.TreeExplainer(model.estimators_[0])
+            shap_values = explainer.shap_values(data)
+            print(shap_values)
+            if isinstance(shap_values, list):
+                for i, class_shap_values in enumerate(shap_values):
+                    print(f"Class {i} summary plot:")
+                    shap.summary_plot(class_shap_values, data, max_display=10, show=False)
+                    plt.title(f"Estimator DT - Class {i} SHAP Summary")
+                    plt.show()
+                    shap.summary_plot(class_shap_values, data, plot_type="bar", feature_names=columns, show=False)
+                    plt.title(f"Estimator DT - Class {i} SHAP Bar")
+                    plt.show()
+            else:
+                shap.summary_plot(shap_values, data, max_display=10, show=False)
+                plt.title(f"Estimator DT - SHAP Summary")
+                plt.show()
+                shap.summary_plot(shap_values, data, plot_type="bar", feature_names=columns, show=False)
+                plt.title(f"Estimator DT - SHAP Bar")
+                plt.show()
+        elif classifier_name == 'RF':
+            explainer = shap.TreeExplainer(model.estimators_[1])
+            shap_values = explainer.shap_values(data)
+            if isinstance(shap_values, list):
+                for i, class_shap_values in enumerate(shap_values):
+                    print(f"Class {i} summary plot:")
+                    shap.summary_plot(class_shap_values, data, max_display=10, show=False)
+                    plt.title(f"Estimator RF - Class {i} SHAP Summary")
+                    plt.show()
+                    shap.summary_plot(class_shap_values, data, plot_type="bar", feature_names=columns, show=False)
+                    plt.title(f"Estimator RF - Class {i} SHAP Bar")
+                    plt.show()
+            else:
+                shap.summary_plot(shap_values, data, max_display=10, show=False)
+                plt.title(f"Estimator RF - SHAP Summary")
+                plt.show()
+                shap.summary_plot(shap_values, data, plot_type="bar", feature_names=columns, show=False)
+                plt.title(f"Estimator RF - SHAP Bar")
+                plt.show()
+        elif classifier_name == 'KNN':
+            if not model.estimators_.contains('KNN'):
+                print("KNN not found in estimators; You're probabily using Fast-ELENIDS.")
+                return
+            explainer = shap.KernelExplainer(model.estimators_[3].predict, data)
+            shap_values = explainer.shap_values(data)
+            if isinstance(shap_values, list):
+                for i, class_shap_values in enumerate(shap_values):
+                    print(f"Class {i} summary plot:")
+                    shap.summary_plot(class_shap_values, data, max_display=10, show=False)
+                    plt.title(f"Estimator KNN - Class {i} SHAP Summary")
+                    plt.show()
+                    shap.summary_plot(class_shap_values, data, plot_type="bar", feature_names=columns, show=False)
+                    plt.title(f"Estimator KNN - Class {i} SHAP Bar")
+                    plt.show()
+            else:
+                shap.summary_plot(shap_values, data, max_display=10, show=False)
+                plt.title(f"Estimator KNN - SHAP Summary")
+                plt.show()
+                shap.summary_plot(shap_values, data, plot_type="bar", feature_names=columns, show=False)
+                plt.title(f"Estimator KNN - SHAP Bar")
+                plt.show()
+        else:
+            explainer = shap.Explainer(model.estimators_[2].predict, data)
+            shap_values = explainer.shap_values(data)
+            if isinstance(shap_values, list):
+                for i, class_shap_values in enumerate(shap_values):
+                    print(f"Class {i} summary plot:")
+                    shap.summary_plot(class_shap_values, data, max_display=10, show=False)
+                    plt.title(f"Estimator MLP - Class {i} SHAP Summary")
+                    plt.show()
+                    shap.summary_plot(class_shap_values, data, plot_type="bar", feature_names=columns, show=False)
+                    plt.title(f"Estimator MLP - Class {i} SHAP Bar")
+                    plt.show()
+            else:
+                shap.summary_plot(shap_values, data, max_display=10, show=False)
+                plt.title(f"Estimator MLP - SHAP Summary")
+                plt.show()
+                shap.summary_plot(shap_values, data, plot_type="bar", feature_names=columns, show=False)
+                plt.title(f"Estimator MLP - SHAP Bar")
+                plt.show()
+
+
+
+def feature_importance(model, columns):
+    """
+    Provide a graph of the relevance of the features for the model.
+
+    Parameters
+    ----------
+    model : ELENIDS or F-ELENIDS.
+    
+    data : the columns of the UNSW-NB15 dataset (without the last two).
+
+    Returns
+    -------
+    Info regarding the 
+    """
+    feature_importances = pd.DataFrame(model.estimators_[0].feature_importances_, index=columns, columns=["Importance"])
+    feature_importances1 = pd.DataFrame(model.estimators_[1].feature_importances_, index=columns, columns=["Importance"])
+    
+    #print(feature_importances)
+
+    for col in range(0, len(columns)):
+        feature_importances["Importance"][col] = (feature_importances["Importance"][col] + feature_importances1["Importance"][col]) / 2
+
+    feature_importances.sort_values(by='Importance', ascending=False, inplace=True)
+    feature_importances.plot(kind='bar', figsize=(8,6), title="Feature importance of the model")
+
 def example():
     """
     Simulates an IDS that uses the package functions.
@@ -181,3 +354,6 @@ def example():
 
     for dataframe in dataframes:
         classify(ids, dataframe, col, le, le1, le2, le3)
+
+
+
