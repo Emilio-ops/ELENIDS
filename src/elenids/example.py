@@ -14,6 +14,8 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.pipeline import Pipeline
 from importlib.resources import files
 import shap
+import pickle
+import joblib
 
 
 def load_testing():
@@ -75,6 +77,141 @@ def Fastbuild():
     v[2] = Pipeline([('scaler', StandardScaler()), ('mlp', MLPClassifier(solver="adam", activation='relu', hidden_layer_sizes=(100,), max_iter=100))])
     model = VotingClassifier(estimators=[("DT", v[0]), ("RF", v[1]), ("MLP", v[2])], voting= 'soft', n_jobs=4, weights=[3.05, 1.49, 4.14])
     return model
+
+
+def savePickle(model, filename):
+    """
+    Save the model to a file using pickle.
+
+    Parameters
+    ----------
+    model : object
+        The model to be saved.
+
+    filename : str
+        The name of the file where the model will be saved.
+    """
+    with open(filename, 'wb') as f:
+        pickle.dump(model, f)
+
+def saveJoblib(model, filename):
+    """
+    Save the model to a file using joblib.
+
+    Parameters
+    ----------
+    model : object
+        The model to be saved.
+
+    filename : str
+        The name of the file where the model will be saved.
+    """
+    joblib.dump(model, filename, compress=3)
+
+def loadPickle(filename):
+    """
+    Load a model from a file using pickle.
+
+    Parameters
+    ----------
+    filename : str
+        The name of the file from which the model will be loaded.
+
+    Returns
+    -------
+    model : object
+        The loaded model.
+    """
+    with open(filename, 'rb') as f:
+        model = pickle.load(f)
+    return model
+
+def loadJoblib(filename):
+    """
+    Load a model from a file using joblib.
+
+    Parameters
+    ----------
+    filename : str
+        The name of the file from which the model will be loaded.
+
+    Returns
+    -------
+    model : object
+        The loaded model.
+    """
+    return joblib.load(filename)
+
+def save(model, filename):
+    """
+    Save the model to a file.
+
+    Parameters
+    ----------
+    model : object
+        The model to be saved.
+
+    filename : str
+        The name of the file where the model will be saved.
+    """
+    '''
+    pickle (and joblib and cloudpickle by extension), has many documented security vulnerabilities by design and 
+    should only be used if the artifact, i.e. the pickle-file, is coming from a trusted and verified source. 
+    You should never load a pickle file from an untrusted source, similarly to how you should never execute 
+    code from an untrusted source.
+    We are aware of this, but we haven't found a better way yet.
+    '''
+    try:
+        if not isinstance(filename, str):
+            raise ValueError("Filename must be a string.")
+        if filename.endswith('.pkl'):       #pickle format already specified
+            savePickle(model, filename)
+        elif filename.endswith('.joblib'):  #joblib format already specified
+            saveJoblib(model, filename)
+        else:
+            try:
+                savePickle(model, filename + '.pkl')
+            except Exception as e:
+                try:
+                    saveJoblib(model, filename + '.joblib')
+                except Exception as e:
+                    raise ValueError(f"Failed to save model: {e}")
+    except ValueError as e:
+        print(f"Error: {e}")
+        return
+
+def load(filename):
+    """
+    Load a model from a file.
+
+    Parameters
+    ----------
+    filename : str
+        The name of the file from which the model will be loaded.
+
+    Returns
+    -------
+    model : object
+        The loaded model.
+    """
+    try:
+        if not isinstance(filename, str):
+            raise ValueError("Filename must be a string.")
+        if filename.endswith('.pkl'):       #pickle format already specified
+            return loadPickle(filename)
+        elif filename.endswith('.joblib'):  #joblib format already specified
+            return loadJoblib(filename)
+        else:
+            try:
+                return loadPickle(filename + '.pkl')
+            except Exception as e:
+                try:
+                    return loadJoblib(filename + '.joblib')
+                except Exception as e:
+                    raise ValueError(f"Failed to load model: {e}")
+    except ValueError as e:
+        print(f"Error: {e}")
+        return None
 
 def fit(model, X_train, Y_train):
     """Fit the model according to X_train, Y_train.
